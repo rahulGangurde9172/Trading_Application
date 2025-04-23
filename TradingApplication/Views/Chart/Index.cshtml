@@ -1,0 +1,31 @@
+﻿@{
+    Layout = null;
+    var bars = (string)ViewBag.BarsJson;  
+    var support = (decimal)ViewBag.Support;
+    var resistance = (decimal)ViewBag.Resistance;
+    var profile = ViewBag.Profile as string;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="~/js/chart-init.js"></script> 
+</head>
+<body>
+    <canvas id="priceChart"></canvas>
+
+    <script>
+        const rawBars = @Html.Raw(bars);  
+        const profileObj = @Html.Raw(profile);  
+        console.log("Raw bars data:", rawBars); 
+
+        initChart("priceChart", rawBars, {
+            support: @support,
+            resistance: @resistance,
+            profile: profileObj
+        });
+    </script>
+</body>
+</html>
