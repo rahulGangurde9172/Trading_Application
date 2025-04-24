@@ -1,31 +1,129 @@
 ﻿@{
     Layout = null;
-    var bars = (string)ViewBag.BarsJson;  
+    var bars = (string)ViewBag.BarsJson;
     var support = (decimal)ViewBag.Support;
     var resistance = (decimal)ViewBag.Resistance;
     var profile = ViewBag.Profile as string;
 }
+
 <!DOCTYPE html>
 <html>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="~/js/chart-init.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    <script src="~/js/chart-init.js"></script> <!-- You can move JS to a separate file if necessary -->
+    <style>
+        /* Styling for the chart and drawing canvas */
+        #settingsPane {
+            display: none;
+            position: fixed;
+            right: 10px;
+            top: 60px;
+            width: 200px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 9999;
+        }
+
+        #drawCanvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #priceChart {
+            position: relative;
+            z-index: 0;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="priceChart"></canvas>
+    <div style="position: relative; width: 1000px; height: 500px;">
+        <!-- Main price chart -->
+        <canvas id="priceChart" width="1000" height="500"></canvas>
+
+        <!-- Overlay canvas for drawing -->
+        <canvas id="drawCanvas" width="1000" height="500"></canvas>
+    </div>
+
+    <!-- Buttons for zoom reset and settings -->
+    <button onclick="resetZoom()">Reset Zoom</button>
+    <button onclick="toggleSettings()">Settings</button>
+
+    <!-- Settings Pane for Drawing Tools -->
+    <div id="settingsPane">
+        <div><strong>Drawing Tools</strong></div>
+        <label><input type="checkbox" id="pencilToggle" onchange="togglePencil()"> Pencil</label><br>
+        <label>Color: <input type="color" id="colorPicker" value="#ff0000"></label><br>
+        <label>Opacity: <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="1"></label>
+        <button onclick="clearDrawing()">Clear Drawing</button>
+
+    </div>
 
     <script>
-        const rawBars = @Html.Raw(bars);  
-        const profileObj = @Html.Raw(profile);  
-        console.log("Raw bars data:", rawBars); 
+        const rawBars = @Html.Raw(bars);  // Data passed from ViewBag
+        const profileObj = @Html.Raw(profile);  // Profile data
 
+        // Initialize the chart with bars and profile data
         initChart("priceChart", rawBars, {
             support: @support,
             resistance: @resistance,
             profile: profileObj
         });
+
+        // Reset zoom on chart
+        function resetZoom() {
+            const chart = Chart.getChart("priceChart");
+            chart.resetZoom();
+        }
+
+        // Toggle settings pane visibility
+        function toggleSettings() {
+            const pane = document.getElementById("settingsPane");
+            pane.style.display = pane.style.display === "block" ? "none" : "block";
+        }
+
+        // Drawing Logic
+        const drawCanvas = document.getElementById('drawCanvas');
+        const drawCtx = drawCanvas.getContext('2d');
+        let drawing = false;
+
+        // Toggle pencil drawing tool
+        function togglePencil() {
+            const isEnabled = document.getElementById('pencilToggle').checked;
+            drawCanvas.style.pointerEvents = isEnabled ? 'auto' : 'none';
+        }
+
+        // Event listener for drawing (mousedown)
+        drawCanvas.addEventListener('mousedown', (e) => {
+            const rect = drawCanvas.getBoundingClientRect();
+            drawCtx.strokeStyle = document.getElementById('colorPicker').value;
+            drawCtx.globalAlpha = parseFloat(document.getElementById('opacitySlider').value);
+            drawCtx.lineWidth = 2;
+            drawCtx.beginPath();
+            drawCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            drawing = true;
+        });
+
+        // Event listener for drawing (mousemove)
+        drawCanvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const rect = drawCanvas.getBoundingClientRect();
+            drawCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            drawCtx.stroke();
+        });
+
+        // Event listener for mouseup (stop drawing)
+        drawCanvas.addEventListener('mouseup', () => drawing = false);
+        drawCanvas.addEventListener('mouseleave', () => drawing = false);
+         function clearDrawing() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        }
     </script>
 </body>
 </html>

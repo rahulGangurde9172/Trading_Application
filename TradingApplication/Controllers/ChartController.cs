@@ -15,9 +15,9 @@ namespace TradingApplication.Controllers
             _md = md; _sr = sr; _vp = vp;
         }
 
-        public async Task<IActionResult> Index(string symbol = "AAPL")
+        public async Task<IActionResult> Index(string symbol = "MSFT")
         {
-            var bars = await _md.GetLastNBarsAsync(symbol, 1000);
+            var bars = await _md.GetLastNBarsAsync(symbol, 200);    
             var support = _sr.ComputeSupport(bars);
             var resistance = _sr.ComputeResistance(bars);
             var profile = _vp.Calculate(bars);
